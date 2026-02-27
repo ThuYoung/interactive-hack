@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Whiteboard Sessions — Interactive Hack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:       #050505;
+      --bg2:      #0c0c0c;
+      --bg3:      #141414;
+      --bg4:      #1c1c1c;
+      --border:   rgba(255,255,255,0.07);
+      --green:    #10a37f;
+      --green-lt: #1dc89a;
+      --white:    #ffffff;
+      --gray:     #8e8ea0;
+      --gray2:    #5e5e72;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--white); font-family: 'Inter', -apple-system, sans-serif; overflow-x: hidden; line-height: 1.6; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; background: rgba(5,5,5,0.85); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+    .nav-logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: var(--white); text-decoration: none; }
+    .nav-logo em { font-style: normal; color: var(--green); }
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: var(--gray); text-decoration: none; transition: color .2s; }
+    .nav-links a:hover { color: var(--white); }
+    .nav-links a.active { color: var(--white); }
+    .nav-cta { background: var(--green) !important; color: #fff !important; padding: 8px 20px; border-radius: 6px; font-weight: 600 !important; transition: background .2s !important; }
+    .nav-cta:hover { background: var(--green-lt) !important; }
+
+    /* PAGE HEADER */
+    .page-header { padding: 120px 48px 64px; max-width: 1200px; margin: 0 auto; position: relative; }
+    .page-header::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: 50vh; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(16,163,127,.10) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray2); margin-bottom: 32px; position: relative; z-index: 1; }
+    .breadcrumb a { color: var(--gray); text-decoration: none; transition: color .2s; }
+    .breadcrumb a:hover { color: var(--white); }
+    .label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--green); margin-bottom: 14px; position: relative; z-index: 1; }
+    .page-title { font-size: clamp(40px, 6vw, 72px); font-weight: 900; letter-spacing: -2.5px; line-height: .95; margin-bottom: 20px; position: relative; z-index: 1; }
+    .page-title span { background: linear-gradient(135deg, var(--green) 0%, var(--green-lt) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-desc { font-size: 17px; color: var(--gray); max-width: 580px; line-height: 1.75; position: relative; z-index: 1; }
+
+    /* MAIN */
+    .main { max-width: 1200px; margin: 0 auto; padding: 0 48px 96px; }
+
+    /* UPCOMING BANNER */
+    .upcoming-banner {
+      background: rgba(16,163,127,.08);
+      border: 1px solid rgba(16,163,127,.2);
+      border-radius: 12px; padding: 20px 28px;
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 40px;
+    }
+    .dot-live { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: blink 2s ease-in-out infinite; flex-shrink: 0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .upcoming-banner p { font-size: 14px; color: var(--gray); }
+    .upcoming-banner strong { color: var(--white); }
+    .upcoming-banner a { color: var(--green); text-decoration: none; font-weight: 600; margin-left: auto; white-space: nowrap; font-size: 14px; }
+    .upcoming-banner a:hover { color: var(--green-lt); }
+
+    /* SECTION LABEL */
+    .sec-label { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gray2); margin-bottom: 16px; margin-top: 48px; }
+
+    /* SESSION LIST */
+    .sessions { display: flex; flex-direction: column; gap: 12px; }
+    .session {
+      display: flex; align-items: center; gap: 24px;
+      padding: 22px 28px;
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
+      text-decoration: none; color: inherit; transition: all .2s;
+    }
+    .session:hover { border-color: rgba(16,163,127,.4); background: var(--bg4); }
+    .sess-date { text-align: center; min-width: 48px; }
+    .sess-date-n { font-size: 26px; font-weight: 800; line-height: 1; }
+    .sess-date-m { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: .08em; }
+    .sess-vl { width: 1px; height: 44px; background: var(--border); flex-shrink: 0; }
+    .sess-info { flex: 1; }
+    .sess-info h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; letter-spacing: -.2px; }
+    .sess-info p  { font-size: 13px; color: var(--gray); }
+    .sess-badge { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 4px; white-space: nowrap; }
+    .badge-upcoming  { color: var(--green);  background: rgba(16,163,127,.1); }
+    .badge-recording { color: var(--gray);   background: var(--bg4); border: 1px solid var(--border); }
+    .sess-speaker {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 8px;
+    }
+    .sess-speaker .avatar {
+      width: 20px; height: 20px;
+      background: linear-gradient(135deg, var(--green), var(--green-lt));
+      border-radius: 50%; font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+    .sess-speaker span { font-size: 12px; color: var(--gray2); }
+
+    /* FOOTER */
+    hr.divider { border: none; border-top: 1px solid var(--border); }
+    .footer { max-width: 1200px; margin: 0 auto; padding: 40px 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    .footer-logo { font-size: 15px; font-weight: 800; }
+    .footer-logo em { font-style: normal; color: var(--green); }
+    .footer-links { display: flex; gap: 24px; list-style: none; flex-wrap: wrap; }
+    .footer-links a { font-size: 13px; color: var(--gray); text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--white); }
+    .footer-copy { font-size: 12px; color: var(--gray2); }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .nav-links li:not(:last-child) { display: none; }
+      .page-header, .main { padding-left: 24px; padding-right: 24px; }
+      .session { flex-wrap: wrap; }
+      .footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Interactive<em>Hack</em></a>
+  <ul class="nav-links">
+    <li><a href="puzzles.html">Puzzles</a></li>
+    <li><a href="whiteboard.html" class="active">Whiteboard</a></li>
+    <li><a href="newsletter.html">Newsletter</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    <li><a href="#" class="nav-cta">Join Community</a></li>
+  </ul>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Home</a>
+    <span>/</span>
+    <span>LLM Whiteboard Sessions</span>
+  </div>
+  <p class="label">Learn</p>
+  <h1 class="page-title">LLM Whiteboard<br><span>Sessions</span></h1>
+  <p class="page-desc">
+    Deep-dive technical sessions where researchers and practitioners unpack
+    the core concepts behind modern language models — from attention mechanisms
+    to RLHF, scaling laws, MoE, and beyond.
+  </p>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- Upcoming banner -->
+  <div class="upcoming-banner">
+    <span class="dot-live"></span>
+    <p><strong>Next Session — Mar 14:</strong> Understanding RLHF: From Reward Models to Policy Optimization</p>
+    <a href="#">Register Free →</a>
+  </div>
+
+  <!-- Upcoming -->
+  <div class="sec-label">Upcoming</div>
+  <div class="sessions">
+    <a class="session" href="#">
+      <div class="sess-date">
+        <div class="sess-date-n">14</div>
+        <div class="sess-date-m">Mar</div>
+      </div>
+      <div class="sess-vl"></div>
+      <div class="sess-info">
+        <h3>Understanding RLHF: From Reward Models to Policy Optimization</h3>
+        <p>A whiteboard walkthrough of reinforcement learning from human feedback — the technique behind ChatGPT and modern aligned LLMs</p>
+        <div class="sess-speaker">
+          <div class="avatar">R</div>
+          <span>Research Talk · 90 min · Free Registration</span>
+        </div>
+      </div>
+      <span class="sess-badge badge-upcoming">Upcoming</span>
+    </a>
+  </div>
+
+  <!-- Past sessions -->
+  <div class="sec-label" style="margin-top:48px;">Past Sessions</div>
+  <div class="sessions">
+
+    <a class="session" href="#">
+      <div class="sess-date">
+        <div class="sess-date-n">28</div>
+        <div class="sess-date-m">Feb</div>
+      </div>
+      <div class="sess-vl"></div>
+      <div class="sess-info">
+        <h3>Benchmark Design: What Makes a Good LLM Evaluation?</h3>
+        <p>Exploring pitfalls of data contamination, overfitting, and metric selection in modern benchmarks</p>
+        <div class="sess-speaker">
+          <div class="avatar">B</div>
+          <span>Lecture · 75 min · Recording Available</span>
+        </div>
+      </div>
+      <span class="sess-badge badge-recording">Recording</span>
+    </a>
+
+    <a class="session" href="#">
+      <div class="sess-date">
+        <div class="sess-date-n">15</div>
+        <div class="sess-date-m">Feb</div>
+      </div>
+      <div class="sess-vl"></div>
+      <div class="sess-info">
+        <h3>Scaling Laws & Emergent Behaviors in Large Language Models</h3>
+        <p>Why bigger isn't always better — and when emergence actually happens in neural networks</p>
+        <div class="sess-speaker">
+          <div class="avatar">S</div>
+          <span>Lecture · 80 min · Recording Available</span>
+        </div>
+      </div>
+      <span class="sess-badge badge-recording">Recording</span>
+    </a>
+
+    <a class="session" href="#">
+      <div class="sess-date">
+        <div class="sess-date-n">01</div>
+        <div class="sess-date-m">Feb</div>
+      </div>
+      <div class="sess-vl"></div>
+      <div class="sess-info">
+        <h3>Mixture of Experts: Architecture, Trade-offs & Real-world Use</h3>
+        <p>A close look at sparse MoE models — how routing works, and why it matters for efficiency</p>
+        <div class="sess-speaker">
+          <div class="avatar">M</div>
+          <span>Lecture · 70 min · Recording Available</span>
+        </div>
+      </div>
+      <span class="sess-badge badge-recording">Recording</span>
+    </a>
+
+    <a class="session" href="#">
+      <div class="sess-date">
+        <div class="sess-date-n">18</div>
+        <div class="sess-date-m">Jan</div>
+      </div>
+      <div class="sess-vl"></div>
+      <div class="sess-info">
+        <h3>Chain-of-Thought Prompting: Why & When It Works</h3>
+        <p>Dissecting the mechanics of CoT and its relationship with model scale and task structure</p>
+        <div class="sess-speaker">
+          <div class="avatar">C</div>
+          <span>Lecture · 65 min · Recording Available</span>
+        </div>
+      </div>
+      <span class="sess-badge badge-recording">Recording</span>
+    </a>
+
+  </div>
+</div>
+
+<hr class="divider" />
+<div class="footer">
+  <div class="footer-logo">Interactive<em>Hack</em></div>
+  <ul class="footer-links">
+    <li><a href="puzzles.html">Puzzles</a></li>
+    <li><a href="whiteboard.html">Whiteboard</a></li>
+    <li><a href="newsletter.html">Newsletter</a></li>
+    <li><a href="#">Community</a></li>
+    <li><a href="#">GitHub</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 InteractiveHack. All rights reserved.</div>
+</div>
+
+</body>
+</html>

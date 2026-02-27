@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Puzzles — Interactive Hack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:       #050505;
+      --bg2:      #0c0c0c;
+      --bg3:      #141414;
+      --bg4:      #1c1c1c;
+      --border:   rgba(255,255,255,0.07);
+      --green:    #10a37f;
+      --green-lt: #1dc89a;
+      --white:    #ffffff;
+      --gray:     #8e8ea0;
+      --gray2:    #5e5e72;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--white); font-family: 'Inter', -apple-system, sans-serif; overflow-x: hidden; line-height: 1.6; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; background: rgba(5,5,5,0.85); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+    .nav-logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: var(--white); text-decoration: none; }
+    .nav-logo em { font-style: normal; color: var(--green); }
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: var(--gray); text-decoration: none; transition: color .2s; }
+    .nav-links a:hover { color: var(--white); }
+    .nav-links a.active { color: var(--white); }
+    .nav-cta { background: var(--green) !important; color: #fff !important; padding: 8px 20px; border-radius: 6px; font-weight: 600 !important; transition: background .2s !important; }
+    .nav-cta:hover { background: var(--green-lt) !important; }
+
+    /* PAGE HEADER */
+    .page-header {
+      padding: 120px 48px 64px;
+      max-width: 1200px; margin: 0 auto;
+      position: relative;
+    }
+    .page-header::before {
+      content: '';
+      position: fixed; top: 0; left: 0; right: 0; height: 50vh;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(16,163,127,.12) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--gray2);
+      margin-bottom: 32px; position: relative; z-index: 1;
+    }
+    .breadcrumb a { color: var(--gray); text-decoration: none; transition: color .2s; }
+    .breadcrumb a:hover { color: var(--white); }
+    .breadcrumb span { color: var(--gray2); }
+
+    .label {
+      font-size: 11px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--green);
+      margin-bottom: 14px; position: relative; z-index: 1;
+    }
+    .page-title {
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 900; letter-spacing: -2.5px; line-height: .95;
+      margin-bottom: 20px; position: relative; z-index: 1;
+    }
+    .page-title span {
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-lt) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .page-desc {
+      font-size: 17px; color: var(--gray);
+      max-width: 580px; line-height: 1.75;
+      position: relative; z-index: 1;
+    }
+
+    /* FILTERS */
+    .filters-wrap { max-width: 1200px; margin: 0 auto; padding: 0 48px 40px; }
+    .filters {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .filter-btn {
+      font-size: 13px; font-weight: 500;
+      padding: 7px 18px; border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--gray);
+      cursor: pointer; transition: all .2s; font-family: inherit;
+    }
+    .filter-btn:hover { border-color: rgba(255,255,255,.18); color: var(--white); }
+    .filter-btn.active { background: rgba(16,163,127,.12); border-color: rgba(16,163,127,.4); color: var(--green-lt); }
+
+    /* MAIN CONTENT */
+    .main { max-width: 1200px; margin: 0 auto; padding: 0 48px 96px; }
+
+    /* PUZZLE CARDS */
+    .puzzles-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 18px; margin-bottom: 80px;
+    }
+    .p-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px;
+      display: flex; flex-direction: column;
+      transition: all .22s; cursor: pointer;
+    }
+    .p-card:hover { border-color: rgba(16,163,127,.45); background: var(--bg4); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.4); }
+    .p-tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--green); background: rgba(16,163,127,.12); padding: 4px 10px; border-radius: 4px; margin-bottom: 18px; }
+    .p-card h3 { font-size: 17px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 10px; }
+    .p-card p  { font-size: 14px; color: var(--gray); line-height: 1.65; flex: 1; }
+    .p-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+    .p-meta { font-size: 12px; color: var(--gray2); }
+    .p-arrow { color: var(--green); font-size: 18px; transition: transform .2s; }
+    .p-card:hover .p-arrow { transform: translateX(4px); }
+    .p-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green-lt); }
+    .p-status::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
+
+    /* HOW IT WORKS */
+    .hiw { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .hiw-inner { max-width: 1200px; margin: 0 auto; padding: 72px 48px; }
+    .hiw-header { margin-bottom: 36px; }
+    .hiw-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+    .hiw-header p { font-size: 15px; color: var(--gray); }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .step { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
+    .step-n { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--green); text-transform: uppercase; margin-bottom: 14px; }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; letter-spacing: -.3px; }
+    .step p  { font-size: 14px; color: var(--gray); line-height: 1.65; }
+
+    /* CTA */
+    .cta-wrap { max-width: 1200px; margin: 0 auto; padding: 72px 48px; }
+    .cta-banner {
+      background: linear-gradient(135deg, rgba(16,163,127,.12) 0%, rgba(16,163,127,.04) 100%);
+      border: 1px solid rgba(16,163,127,.22); border-radius: 16px;
+      padding: 56px; text-align: center;
+    }
+    .cta-banner h2 { font-size: 30px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+    .cta-banner p  { font-size: 15px; color: var(--gray); max-width: 440px; margin: 0 auto 32px; line-height: 1.7; }
+    .btn-primary { background: var(--green); color: #fff; padding: 13px 30px; border-radius: 8px; font-size: 15px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all .2s; display: inline-block; }
+    .btn-primary:hover { background: var(--green-lt); transform: translateY(-1px); }
+
+    /* FOOTER */
+    hr.divider { border: none; border-top: 1px solid var(--border); }
+    .footer { max-width: 1200px; margin: 0 auto; padding: 40px 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    .footer-logo { font-size: 15px; font-weight: 800; }
+    .footer-logo em { font-style: normal; color: var(--green); }
+    .footer-links { display: flex; gap: 24px; list-style: none; flex-wrap: wrap; }
+    .footer-links a { font-size: 13px; color: var(--gray); text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--white); }
+    .footer-copy { font-size: 12px; color: var(--gray2); }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .nav-links li:not(:last-child) { display: none; }
+      .page-header, .filters-wrap, .main, .hiw-inner, .cta-wrap { padding-left: 24px; padding-right: 24px; }
+      .puzzles-grid, .steps { grid-template-columns: 1fr; }
+      .footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Interactive<em>Hack</em></a>
+  <ul class="nav-links">
+    <li><a href="puzzles.html" class="active">Puzzles</a></li>
+    <li><a href="whiteboard.html">Whiteboard</a></li>
+    <li><a href="newsletter.html">Newsletter</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    <li><a href="#" class="nav-cta">Join Community</a></li>
+  </ul>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Home</a>
+    <span>/</span>
+    <span>Interactive Puzzles</span>
+  </div>
+  <p class="label">★ Main Focus · Arena</p>
+  <h1 class="page-title">Interactive<br><span>Puzzles</span></h1>
+  <p class="page-desc">
+    Community members contribute high-quality datasets and puzzle challenges
+    to evaluate the true capabilities of today's leading LLMs.
+    Submit a dataset, run benchmarks, and explore the leaderboard — all in one open arena.
+  </p>
+</div>
+
+<!-- FILTERS -->
+<div class="filters-wrap">
+  <div class="filters">
+    <button class="filter-btn active">All</button>
+    <button class="filter-btn">Reasoning</button>
+    <button class="filter-btn">Coding</button>
+    <button class="filter-btn">Knowledge</button>
+    <button class="filter-btn">Math</button>
+    <button class="filter-btn">Language</button>
+    <button class="filter-btn">Multimodal</button>
+  </div>
+</div>
+
+<!-- PUZZLE GRID -->
+<div class="main">
+  <div class="puzzles-grid">
+
+    <div class="p-card">
+      <span class="p-tag">Reasoning</span>
+      <h3>Multi-step Logic Arena</h3>
+      <p>Test LLMs on complex multi-step reasoning chains that demand consistent logical deduction across long contexts.</p>
+      <div class="p-card-foot">
+        <span class="p-status">248 submissions</span>
+        <span class="p-arrow">→</span>
+      </div>
+    </div>
+
+    <div class="p-card">
+      <span class="p-tag">Coding</span>
+      <h3>Code Synthesis Challenge</h3>
+      <p>Evaluate code generation quality across diverse programming tasks contributed by engineers worldwide.</p>
+      <div class="p-card-foot">
+        <span class="p-status">182 submissions</span>
+        <span class="p-arrow">→</span>
+      </div>
+    </div>
+
+    <div class="p-card">
+      <span class="p-tag">Knowledge</span>
+      <h3>Domain Knowledge Probe</h3>
+      <p>Expert-crafted questions across science, law, medicine and finance to expose the precise limits of LLM knowledge.</p>
+      <div class="p-card-foot">
+        <span class="p-status">317 submissions</span>
+        <span class="p-arrow">→</span>
+      </div>
+    </div>
+
+    <div class="p-card">
+      <span class="p-tag">Math</span>
+      <h3>Olympiad Math Gauntlet</h3>
+      <p>Competition-level mathematics problems sourced from IMO, AIME, and AMC to rigorously test quantitative reasoning.</p>
+      <div class="p-card-foot">
+        <span class="p-status">94 submissions</span>
+        <span class="p-arrow">→</span>
+      </div>
+    </div>
+
+    <div class="p-card">
+      <span class="p-tag">Language</span>
+      <h3>Cross-lingual Transfer Test</h3>
+      <p>Multilingual tasks that measure how well LLMs transfer knowledge and reasoning abilities across diverse languages.</p>
+      <div class="p-card-foot">
+        <span class="p-status">138 submissions</span>
+        <span class="p-arrow">→</span>
+      </div>
+    </div>
+
+    <div class="p-card">
+      <span class="p-tag">Multimodal</span>
+      <h3>Vision-Language Benchmark</h3>
+      <p>Paired image-text challenges that test how well vision-language models align visual understanding with precise language generation.</p>
+      <div class="p-card-foot">
+        <span class="p-meta">Coming Soon</span>
+        <span class="p-arrow">→</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="hiw">
+  <div class="hiw-inner">
+    <div class="hiw-header">
+      <h2>How it works</h2>
+      <p>Three steps to contribute and benchmark the world's best LLMs</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">Step 01</div>
+        <h3>Contribute a Dataset</h3>
+        <p>Submit your carefully crafted puzzle or dataset through our community portal. Q&amp;A, code, reasoning chains — all formats welcome.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">Step 02</div>
+        <h3>Run the Benchmark</h3>
+        <p>Your dataset is automatically evaluated across all supported LLMs. Results are scored, ranked, and published in real time.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">Step 03</div>
+        <h3>Explore the Leaderboard</h3>
+        <p>Dive into model comparisons, share insights with the community, and watch the best datasets get featured on the front page.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-banner">
+    <h2>Contribute a Puzzle</h2>
+    <p>Have a challenging dataset or a creative evaluation idea? Join our contributors and help build the world's most community-driven Interactive Benchmark.</p>
+    <a href="#" class="btn-primary">Submit Your Dataset →</a>
+  </div>
+</div>
+
+<hr class="divider" />
+<div class="footer">
+  <div class="footer-logo">Interactive<em>Hack</em></div>
+  <ul class="footer-links">
+    <li><a href="puzzles.html">Puzzles</a></li>
+    <li><a href="whiteboard.html">Whiteboard</a></li>
+    <li><a href="newsletter.html">Newsletter</a></li>
+    <li><a href="#">Community</a></li>
+    <li><a href="#">GitHub</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 InteractiveHack. All rights reserved.</div>
+</div>
+
+<script>
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

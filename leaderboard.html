@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard — Interactive Hack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:       #050505;
+      --bg2:      #0c0c0c;
+      --bg3:      #141414;
+      --bg4:      #1c1c1c;
+      --bg5:      #222222;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(255,255,255,0.12);
+      --green:    #10a37f;
+      --green-lt: #1dc89a;
+      --white:    #ffffff;
+      --gray:     #8e8ea0;
+      --gray2:    #5e5e72;
+      --gold:     #f5c518;
+      --silver:   #9aa3b2;
+      --bronze:   #cd7f5a;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--white); font-family: 'Inter', -apple-system, sans-serif; overflow-x: hidden; line-height: 1.6; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 60px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px;
+      background: rgba(5,5,5,0.9); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: var(--white); text-decoration: none; }
+    .nav-logo em { font-style: normal; color: var(--green); }
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: var(--gray); text-decoration: none; transition: color .2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--white); }
+    .nav-cta { background: var(--green) !important; color: #fff !important; padding: 8px 20px; border-radius: 6px; font-weight: 600 !important; }
+    .nav-cta:hover { background: var(--green-lt) !important; }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      padding: 100px 48px 40px;
+      max-width: 1400px; margin: 0 auto;
+    }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray2); margin-bottom: 28px; }
+    .breadcrumb a { color: var(--gray); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--white); }
+
+    .header-row {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 32px; flex-wrap: wrap; margin-bottom: 8px;
+    }
+    .label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+    .page-title { font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: -2px; line-height: 1; }
+    .page-title span { background: linear-gradient(135deg, var(--green), var(--green-lt)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-desc { font-size: 15px; color: var(--gray); max-width: 520px; line-height: 1.7; margin-top: 12px; }
+
+    /* STATS ROW */
+    .header-stats { display: flex; gap: 32px; flex-shrink: 0; }
+    .hstat { text-align: right; }
+    .hstat-n { font-size: 26px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .hstat-n em { font-style: normal; color: var(--green); font-size: 18px; }
+    .hstat-l { font-size: 12px; color: var(--gray2); margin-top: 2px; }
+
+    /* ── CONTROLS ── */
+    .controls-wrap { max-width: 1400px; margin: 0 auto; padding: 0 48px 0; }
+
+    /* Category tabs */
+    .cat-tabs {
+      display: flex; gap: 4px; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border); padding-bottom: 0;
+    }
+    .cat-tab {
+      font-size: 13px; font-weight: 500;
+      padding: 10px 18px; border: none; background: transparent;
+      color: var(--gray); cursor: pointer;
+      font-family: inherit; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: all .2s;
+    }
+    .cat-tab:hover { color: var(--white); }
+    .cat-tab.active { color: var(--green-lt); border-bottom-color: var(--green); }
+
+    /* Search + filters row */
+    .filter-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 20px 0 24px; flex-wrap: wrap;
+    }
+    .search-box {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0 14px;
+      flex: 1; max-width: 320px; min-width: 200px;
+      transition: border-color .2s;
+    }
+    .search-box:focus-within { border-color: rgba(16,163,127,.5); }
+    .search-box svg { color: var(--gray2); flex-shrink: 0; }
+    .search-box input { background: none; border: none; outline: none; font-family: inherit; font-size: 14px; color: var(--white); padding: 10px 0; width: 100%; }
+    .search-box input::placeholder { color: var(--gray2); }
+
+    .filter-select {
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--gray); font-family: inherit; font-size: 13px; font-weight: 500;
+      padding: 10px 14px; border-radius: 8px; outline: none; cursor: pointer;
+      transition: border-color .2s; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238e8ea0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 32px;
+    }
+    .filter-select:hover { border-color: var(--border2); color: var(--white); }
+
+    .filter-toggle {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--gray); cursor: pointer;
+      margin-left: auto;
+    }
+    .toggle {
+      width: 36px; height: 20px; background: var(--bg4);
+      border: 1px solid var(--border2); border-radius: 10px;
+      position: relative; cursor: pointer; transition: background .2s;
+    }
+    .toggle.on { background: var(--green); border-color: var(--green); }
+    .toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 14px; height: 14px; border-radius: 50%; background: #fff;
+      transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+    }
+    .toggle.on::after { left: 18px; }
+
+    /* ── MAIN TABLE AREA ── */
+    .table-wrap { max-width: 1400px; margin: 0 auto; padding: 0 48px 96px; }
+
+    /* INFO BAR */
+    .info-bar {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 12px; color: var(--gray2);
+      padding: 12px 0; margin-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-bar strong { color: var(--gray); }
+    .info-bar .dot { width: 3px; height: 3px; background: var(--gray2); border-radius: 50%; }
+    .last-updated { margin-left: auto; }
+
+    /* THE TABLE */
+    .lb-table { width: 100%; border-collapse: collapse; }
+
+    /* Header */
+    .lb-table thead th {
+      font-size: 11px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--gray2);
+      padding: 10px 16px; text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap; cursor: pointer; user-select: none;
+      transition: color .2s;
+    }
+    .lb-table thead th:hover { color: var(--gray); }
+    .lb-table thead th.sorted { color: var(--green); }
+    .th-sort { display: inline-flex; align-items: center; gap: 4px; }
+    .sort-icon { font-size: 10px; color: var(--green); }
+
+    /* Rows */
+    .lb-table tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+    .lb-table tbody tr:hover { background: var(--bg3); }
+    .lb-table tbody tr.top3 { }
+
+    .lb-table td { padding: 14px 16px; font-size: 14px; vertical-align: middle; }
+
+    /* Rank cell */
+    .rank-cell { width: 52px; text-align: center; }
+    .rank-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 6px;
+      font-size: 13px; font-weight: 700;
+    }
+    .rank-1 { background: rgba(245,197,24,.15); color: var(--gold); }
+    .rank-2 { background: rgba(154,163,178,.12); color: var(--silver); }
+    .rank-3 { background: rgba(205,127,90,.12); color: var(--bronze); }
+    .rank-other { color: var(--gray2); font-size: 13px; font-weight: 600; }
+
+    /* Model cell */
+    .model-cell { min-width: 220px; }
+    .model-name {
+      font-size: 15px; font-weight: 600; letter-spacing: -.2px;
+      color: var(--white); display: flex; align-items: center; gap: 8px;
+    }
+    .model-name a { color: inherit; text-decoration: none; }
+    .model-name a:hover { color: var(--green-lt); }
+    .model-tag {
+      font-size: 9px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 3px;
+    }
+    .tag-new    { background: rgba(16,163,127,.15); color: var(--green-lt); }
+    .tag-hot    { background: rgba(245,100,60,.15);  color: #f56440; }
+    .tag-prelim { background: rgba(255,200,0,.1);    color: #f5c200; }
+    .model-provider { font-size: 12px; color: var(--gray2); margin-top: 2px; }
+
+    /* Score cell */
+    .score-cell { text-align: right; min-width: 120px; }
+    .score-bar-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+    .score-val { font-size: 16px; font-weight: 700; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+    .score-ci { font-size: 11px; color: var(--gray2); font-variant-numeric: tabular-nums; }
+    .score-bar { width: 80px; height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+    .score-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--green), var(--green-lt)); }
+
+    /* Votes cell */
+    .votes-cell { text-align: right; white-space: nowrap; }
+    .votes-num { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .votes-k   { color: var(--gray); font-weight: 400; }
+
+    /* Win rate */
+    .wr-cell { text-align: right; white-space: nowrap; }
+    .wr-num { font-size: 14px; font-weight: 600; }
+    .wr-bar { width: 60px; height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 4px; margin-left: auto; }
+    .wr-fill { height: 100%; border-radius: 2px; }
+
+    /* Trend */
+    .trend-cell { text-align: center; width: 60px; }
+    .trend { font-size: 12px; font-weight: 700; }
+    .trend-up   { color: var(--green-lt); }
+    .trend-down { color: #f56440; }
+    .trend-flat { color: var(--gray2); }
+
+    /* Org cell */
+    .org-cell { }
+    .org-badge {
+      display: inline-block;
+      font-size: 11px; font-weight: 600;
+      padding: 3px 10px; border-radius: 4px;
+      background: var(--bg4); border: 1px solid var(--border);
+      color: var(--gray); white-space: nowrap;
+    }
+
+    /* License cell */
+    .lic-cell { }
+    .lic {
+      font-size: 11px; color: var(--gray2);
+      background: var(--bg3); padding: 3px 9px;
+      border-radius: 4px; display: inline-block;
+    }
+    .lic-open { color: var(--green); background: rgba(16,163,127,.08); }
+
+    /* Category dots */
+    .cats-cell { }
+    .cats { display: flex; gap: 4px; flex-wrap: wrap; }
+    .cat-dot {
+      font-size: 10px; font-weight: 600; letter-spacing: .04em;
+      padding: 2px 8px; border-radius: 3px;
+      background: var(--bg4); color: var(--gray); border: 1px solid var(--border);
+    }
+
+    /* ── HOW SCORES WORK ── */
+    .explainer {
+      background: var(--bg2);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .explainer-inner {
+      max-width: 1400px; margin: 0 auto; padding: 48px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px;
+    }
+    .exp-item h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; letter-spacing: -.2px; }
+    .exp-item p  { font-size: 13px; color: var(--gray); line-height: 1.7; }
+    .exp-label   { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+
+    /* ── CONTRIBUTE BANNER ── */
+    .cta-wrap { max-width: 1400px; margin: 0 auto; padding: 64px 48px; }
+    .cta-banner {
+      background: linear-gradient(135deg, rgba(16,163,127,.1) 0%, rgba(16,163,127,.04) 100%);
+      border: 1px solid rgba(16,163,127,.2); border-radius: 16px;
+      padding: 48px; text-align: center;
+    }
+    .cta-banner h2 { font-size: 26px; font-weight: 800; letter-spacing: -1px; margin-bottom: 10px; }
+    .cta-banner p  { font-size: 14px; color: var(--gray); max-width: 420px; margin: 0 auto 28px; line-height: 1.7; }
+    .btn-primary {
+      background: var(--green); color: #fff;
+      padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: inline-block; transition: all .2s;
+    }
+    .btn-primary:hover { background: var(--green-lt); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; color: var(--white);
+      padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      text-decoration: none; border: 1px solid var(--border); display: inline-block;
+      transition: all .2s; margin-left: 12px;
+    }
+    .btn-outline:hover { background: var(--bg3); border-color: var(--border2); }
+
+    /* FOOTER */
+    hr.divider { border: none; border-top: 1px solid var(--border); }
+    .footer { max-width: 1400px; margin: 0 auto; padding: 36px 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    .footer-logo { font-size: 15px; font-weight: 800; }
+    .footer-logo em { font-style: normal; color: var(--green); }
+    .footer-links { display: flex; gap: 24px; list-style: none; flex-wrap: wrap; }
+    .footer-links a { font-size: 13px; color: var(--gray); text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--white); }
+    .footer-copy { font-size: 12px; color: var(--gray2); }
+
+    /* RESPONSIVE */
+    @media (max-width: 1100px) {
+      .hide-md { display: none; }
+    }
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .nav-links li:not(:last-child) { display: none; }
+      .page-header, .controls-wrap, .table-wrap, .cta-wrap { padding-left: 24px; padding-right: 24px; }
+      .explainer-inner { grid-template-columns: 1fr; padding: 32px 24px; }
+      .header-stats { display: none; }
+      .hide-sm { display: none; }
+      .footer { flex-direction: column; text-align: center; }
+      .filter-toggle { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Interactive<em>Hack</em></a>
+  <ul class="nav-links">
+    <li><a href="puzzles.html">Puzzles</a></li>
+    <li><a href="whiteboard.html">Whiteboard</a></li>
+    <li><a href="newsletter.html">Newsletter</a></li>
+    <li><a href="leaderboard.html" class="active">Leaderboard</a></li>
+    <li><a href="#" class="nav-cta">Join Community</a></li>
+  </ul>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Home</a>
+    <span>/</span>
+    <span>Leaderboard</span>
+  </div>
+  <div class="header-row">
+    <div>
+      <p class="label">Arena Rankings</p>
+      <h1 class="page-title">Interactive<br><span>Benchmark</span></h1>
+      <p class="page-desc">
+        Community-voted rankings of the world's leading LLMs across reasoning, coding, knowledge, and more.
+        Scores are computed using the Bradley-Terry model from pairwise comparisons.
+      </p>
+    </div>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-n">6.2M<em>+</em></div>
+        <div class="hstat-l">Total Votes Cast</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-n">32</div>
+        <div class="hstat-l">Models Ranked</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-n">8</div>
+        <div class="hstat-l">Categories</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls-wrap">
+  <!-- Category Tabs -->
+  <div class="cat-tabs">
+    <button class="cat-tab active" onclick="setTab(this)">Overall</button>
+    <button class="cat-tab" onclick="setTab(this)">Reasoning</button>
+    <button class="cat-tab" onclick="setTab(this)">Coding</button>
+    <button class="cat-tab" onclick="setTab(this)">Math</button>
+    <button class="cat-tab" onclick="setTab(this)">Knowledge</button>
+    <button class="cat-tab" onclick="setTab(this)">Language</button>
+    <button class="cat-tab" onclick="setTab(this)">Instruction Following</button>
+    <button class="cat-tab" onclick="setTab(this)">Multimodal</button>
+  </div>
+
+  <!-- Filter Row -->
+  <div class="filter-row">
+    <div class="search-box">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" placeholder="Search models..." oninput="filterTable(this.value)" />
+    </div>
+
+    <select class="filter-select" onchange="filterOrg(this.value)">
+      <option value="">All Organizations</option>
+      <option>OpenAI</option>
+      <option>Anthropic</option>
+      <option>Google DeepMind</option>
+      <option>Meta AI</option>
+      <option>Mistral AI</option>
+      <option>xAI</option>
+      <option>Cohere</option>
+    </select>
+
+    <select class="filter-select">
+      <option value="">All Licenses</option>
+      <option>Proprietary</option>
+      <option>Open Source</option>
+      <option>Open Weights</option>
+    </select>
+
+    <div class="filter-toggle">
+      <span>Show CI</span>
+      <div class="toggle on" id="ci-toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <div class="info-bar">
+    <strong>32 models</strong>
+    <span class="dot"></span>
+    <span>Ranked by Arena Score (Bradley-Terry model)</span>
+    <span class="dot"></span>
+    <span>Pairwise comparisons from community votes</span>
+    <span class="last-updated">Updated Feb 27, 2026</span>
+  </div>
+
+  <table class="lb-table" id="lb-table">
+    <thead>
+      <tr>
+        <th class="rank-cell">#</th>
+        <th onclick="sortTable(1)"><span class="th-sort">Model <span class="sort-icon">↕</span></span></th>
+        <th class="hide-sm" onclick="sortTable(2)"><span class="th-sort">Organization <span class="sort-icon">↕</span></span></th>
+        <th onclick="sortTable(3)" class="sorted"><span class="th-sort">Arena Score <span class="sort-icon">↓</span></span></th>
+        <th class="hide-md">95% CI</th>
+        <th onclick="sortTable(5)" class="hide-sm"><span class="th-sort">Votes <span class="sort-icon">↕</span></span></th>
+        <th onclick="sortTable(6)" class="hide-md"><span class="th-sort">Win Rate <span class="sort-icon">↕</span></span></th>
+        <th class="hide-md">Trend</th>
+        <th class="hide-sm">License</th>
+      </tr>
+    </thead>
+    <tbody id="lb-body">
+
+      <!-- Row 1 -->
+      <tr class="top3">
+        <td class="rank-cell"><span class="rank-num rank-1">1</span></td>
+        <td class="model-cell">
+          <div class="model-name">
+            <a href="#">GPT-4o (2025-05)</a>
+            <span class="model-tag tag-hot">HOT</span>
+          </div>
+          <div class="model-provider">OpenAI · gpt-4o-2025-05</div>
+        </td>
+        <td class="org-cell hide-sm"><span class="org-badge">OpenAI</span></td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div>
+              <div class="score-val">1312</div>
+            </div>
+            <div class="score-bar"><div class="score-fill" style="width:100%"></div></div>
+          </div>
+        </td>
+        <td class="score-ci hide-md">+8 / −7</td>
+        <td class="votes-cell hide-sm"><span class="votes-num">284<span class="votes-k">k</span></span></td>
+        <td class="wr-cell hide-md">
+          <div class="wr-num">71.4%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:71.4%;background:var(--green)"></div></div>
+        </td>
+        <td class="trend-cell hide-md"><span class="trend trend-up">↑2</span></td>
+        <td class="lic-cell hide-sm"><span class="lic">Proprietary</span></td>
+      </tr>
+
+      <!-- Row 2 -->
+      <tr class="top3">
+        <td class="rank-cell"><span class="rank-num rank-2">2</span></td>
+        <td class="model-cell">
+          <div class="model-name">
+            <a href="#">Claude 3.7 Sonnet</a>
+            <span class="model-tag tag-new">NEW</span>
+          </div>
+          <div class="model-provider">Anthropic · claude-3-7-sonnet</div>
+        </td>
+        <td class="org-cell hide-sm"><span class="org-badge">Anthropic</span></td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div><div class="score-val">1298</div></div>
+            <div class="score-bar"><div class="score-fill" style="width:96%"></div></div>
+          </div>
+        </td>
+        <td class="score-ci hide-md">+6 / −6</td>
+        <td class="votes-cell hide-sm"><span class="votes-num">201<span class="votes-k">k</span></span></td>
+        <td class="wr-cell hide-md">
+          <div class="wr-num">68.9%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:68.9%;background:var(--green)"></div></div>
+        </td>
+        <td class="trend-cell hide-md"><span class="trend trend-up">↑1</span></td>
+        <td class="lic-cell hide-sm"><span class="lic">Proprietary</span></td>
+      </tr>
+
+      <!-- Row 3 -->
+      <tr class="top3">
+        <td class="rank-cell"><span class="rank-num rank-3">3</span></td>
+        <td class="model-cell">
+          <div class="model-name"><a href="#">Gemini 2.0 Ultra</a></div>
+          <div class="model-provider">Google DeepMind · gemini-2.0-ultra</div>
+        </td>
+        <td class="org-cell hide-sm"><span class="org-badge">Google DeepMind</span></td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div><div class="score-val">1287</div></div>
+            <div class="score-bar"><div class="score-fill" style="width:92%"></div></div>
+          </div>
+        </td>
+        <td class="score-ci hide-md">+9 / −8</td>
+        <td class="votes-cell hide-sm"><span class="votes-num">178<span class="votes-k">k</span></span></td>
+        <td class="wr-cell hide-md">
+          <div class="wr-num">66.2%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:66.2%;background:var(--green)"></div></div>
+        </td>
+        <td class="trend-cell hide-md"><span class="trend trend-down">↓1</span></td>
+        <td class="lic-cell hide-sm"><span class="lic">Proprietary</span></td>
+      </tr>
+
+      <!-- Row 4 -->
+      <tr>
+        <td class="rank-cell"><span class="rank-other">4</span></td>
+        <td class="model-cell">
+          <div class="model-name"><a href="#">Grok-3</a></div>
+          <div class="model-provider">xAI · grok-3</div>
+        </td>
+        <td class="org-cell hide-sm"><span class="org-badge">xAI</span></td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div><div class="score-val">1271</div></div>
+            <div class="score-bar"><div class="score-fill" style="width:88%"></div></div>
+          </div>
+        </td>
+        <td class="score-ci hide-md">+11 / −10</td>
+        <td class="votes-cell hide-sm"><span class="votes-num">142<span class="votes-k">k</span></span></td>
+        <td class="wr-cell hide-md">
+          <div class="wr-num">64.7%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:64.7%;background:#5b9cf6"></div></div>
+        </td>
+        <td class="trend-cell hide-md"><span class="trend trend-up">↑3</span></td>
+        <td class="lic-cell hide-sm"><span class="lic">Proprietary</span></td>
+      </tr>
+
+      <!-- Row 5 -->
+      <tr>
+        <td class="rank-cell"><span class="rank-other">5</span></td>
+        <td class="model-cell">
+          <div class="model-name">
+            <a href="#">Llama 3.3 405B</a>
+            <span class="model-tag tag-new">NEW</span>
+          </div>
+          <div class="model-provider">Meta AI · llama-3.3-405b</div>
+        </td>
+        <td class="org-cell hide-sm"><span class="org-badge">Meta AI</span></td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div><div class="score-val">1253</div></div>
+            <div class="score-bar"><div class="score-fill" style="width:83%"></div></div>
+          </div>
+        </td>
+        <td class="score-ci hide-md">+14 / −13</td>
+        <td class="votes-cell hide-sm"><span class="votes-num">98<span class="votes-k">k</span></span></td>
+        <td class="wr-cell hide-md">
+          <div class="wr-num">61.3%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:61.3%;background:#a78bfa"></div></div>
+        </td>
+        <td class="trend-cell hide-md"><span class="trend trend-flat">—</span></td>
+        <td class="lic-cell hide-sm"><span class="lic lic-open">Open Weights</span></td>
+      </tr>
+
+      <!-- Row 6 -->
+      <tr>
+        <td class="rank-cell"><span class="rank-other">6</span></td>
+        <td class="model-cell">
+          <div class="model-name"><a href="#">Mistral Large 2</a></div>
+          <div class="model-provider">Mistral AI · mistral-large-2</div>
+        </td>
+        <td class="org-cell hide-sm"><span class="org-badge">Mistral AI</span></td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div><div class="score-val">1238</div></div>
+            <div class="score-bar"><div class="score-fill" style="width:79%"></div></div>
+          </div>
+        </td>
+        <td class="score-ci hide-md">+10 / −9</td>
+        <td class="votes-cell hide-sm"><span class="votes-num">86<span class="votes-k">k</span></span></td>
+        <td class="wr-cell hide-md">
+          <div class="wr-num">59.1%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:59.1%;background:#f59e0b"></div></div>
+        </td>
+        <td class="trend-cell hide-md"><span class="trend trend-down">↓2</span></td>
+        <td class="lic-cell hide-sm"><span class="lic lic-open">Open Weights</span></td>
+      </tr>
+
+      <!-- Row 7 -->
+      <tr>
+        <td class="rank-cell"><span class="rank-other">7</span></td>
+        <td class="model-cell">
+          <div class="model-name">
+            <a href="#">Command R+</a>
+            <span class="model-tag tag-prelim">PRELIM</span>
+          </div>
+          <div class="model-provider">Cohere · command-r-plus</div>
+        </td>
+        <td class="org-cell hide-sm"><span class="org-badge">Cohere</span></td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div><div class="score-val">1214</div></div>
+            <div class="score-bar"><div class="score-fill" style="width:73%"></div></div>
+          </div>
+        </td>
+        <td class="score-ci hide-md">+18 / −16</td>
+        <td class="votes-cell hide-sm"><span class="votes-num">41<span class="votes-k">k</span></span></td>
+        <td class="wr-cell hide-md">
+          <div class="wr-num">55.6%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:55.6%;background:#5b9cf6"></div></div>
+        </td>
+        <td class="trend-cell hide-md"><span class="trend trend-up">↑1</span></td>
+        <td class="lic-cell hide-sm"><span class="lic">Proprietary</span></td>
+      </tr>
+
+      <!-- Row 8 -->
+      <tr>
+        <td class="rank-cell"><span class="rank-other">8</span></td>
+        <td class="model-cell">
+          <div class="model-name"><a href="#">DeepSeek-V3</a></div>
+          <div class="model-provider">DeepSeek · deepseek-v3</div>
+        </td>
+        <td class="org-cell hide-sm"><span class="org-badge">DeepSeek</span></td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div><div class="score-val">1198</div></div>
+            <div class="score-bar"><div class="score-fill" style="width:69%"></div></div>
+          </div>
+        </td>
+        <td class="score-ci hide-md">+12 / −11</td>
+        <td class="votes-cell hide-sm"><span class="votes-num">73<span class="votes-k">k</span></span></td>
+        <td class="wr-cell hide-md">
+          <div class="wr-num">53.2%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:53.2%;background:#a78bfa"></div></div>
+        </td>
+        <td class="trend-cell hide-md"><span class="trend trend-up">↑4</span></td>
+        <td class="lic-cell hide-sm"><span class="lic lic-open">Open Source</span></td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
+
+<!-- HOW SCORES WORK -->
+<div class="explainer">
+  <div class="explainer-inner">
+    <div class="exp-item">
+      <p class="exp-label">Methodology</p>
+      <h3>Bradley-Terry Model</h3>
+      <p>Arena Scores are computed using the Bradley-Terry model — a maximum likelihood estimator for pairwise comparisons. Every community vote contributes to the model's score. Higher scores indicate consistently preferred responses.</p>
+    </div>
+    <div class="exp-item">
+      <p class="exp-label">Confidence</p>
+      <h3>95% Confidence Interval</h3>
+      <p>The ± values represent the 95% CI computed from 1,000 bootstrap samples of all recorded votes. A narrow CI means the ranking is stable. Models with few votes show wider intervals and are marked as Preliminary.</p>
+    </div>
+    <div class="exp-item">
+      <p class="exp-label">Fairness</p>
+      <h3>Blind Evaluation</h3>
+      <p>During community puzzle battles, model identities are hidden until after a vote is cast. This prevents bias and ensures rankings reflect genuine capability differences rather than brand familiarity.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-banner">
+    <h2>Challenge the Leaderboard</h2>
+    <p>Contribute a puzzle dataset and watch how the top LLMs perform. The best datasets get featured and directly influence rankings.</p>
+    <a href="puzzles.html" class="btn-primary">Submit a Dataset →</a>
+    <a href="puzzles.html" class="btn-outline">View Puzzles</a>
+  </div>
+</div>
+
+<hr class="divider" />
+<div class="footer">
+  <div class="footer-logo">Interactive<em>Hack</em></div>
+  <ul class="footer-links">
+    <li><a href="puzzles.html">Puzzles</a></li>
+    <li><a href="whiteboard.html">Whiteboard</a></li>
+    <li><a href="newsletter.html">Newsletter</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    <li><a href="#">GitHub</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 InteractiveHack. All rights reserved.</div>
+</div>
+
+<script>
+  // Tab switching
+  function setTab(el) {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // Search filter
+  function filterTable(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('#lb-body tr').forEach(row => {
+      const text = row.querySelector('.model-name')?.textContent.toLowerCase() || '';
+      const org  = row.querySelector('.org-badge')?.textContent.toLowerCase() || '';
+      row.style.display = (text.includes(q) || org.includes(q)) ? '' : 'none';
+    });
+  }
+
+  // Org filter
+  function filterOrg(org) {
+    document.querySelectorAll('#lb-body tr').forEach(row => {
+      if (!org) { row.style.display = ''; return; }
+      const rowOrg = row.querySelector('.org-badge')?.textContent || '';
+      row.style.display = rowOrg === org ? '' : 'none';
+    });
+  }
+
+  // Column sort (basic)
+  function sortTable(col) {
+    const tbody = document.getElementById('lb-body');
+    const rows  = Array.from(tbody.querySelectorAll('tr'));
+    const dir   = tbody.dataset.sortDir === 'asc' ? -1 : 1;
+    tbody.dataset.sortDir = dir === 1 ? 'asc' : 'desc';
+
+    rows.sort((a, b) => {
+      const aVal = a.querySelectorAll('td')[col]?.textContent.replace(/[^0-9.]/g,'') || '0';
+      const bVal = b.querySelectorAll('td')[col]?.textContent.replace(/[^0-9.]/g,'') || '0';
+      return (parseFloat(aVal) - parseFloat(bVal)) * dir;
+    });
+
+    rows.forEach(r => tbody.appendChild(r));
+
+    // Update rank numbers after sort
+    rows.filter(r => r.style.display !== 'none').forEach((r, i) => {
+      const cell = r.querySelector('.rank-num, .rank-other');
+      if (cell) cell.textContent = i + 1;
+    });
+  }
+</script>
+
+</body>
+</html>
